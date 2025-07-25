@@ -1,0 +1,203 @@
+name: "Terraform Static Checks"
+
+on:
+  push:
+    branches: [ "main"]
+  pull_request:
+    branches: [ "main"]
+  workflow_dispatch:
+
+jobs:
+  terraform-lint-secure:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@633666f66e0061ca3b725c73b2ec20cd13a8fdd1 # v2.0.3
+        with:
+          terraform_version: "~1.5"
+
+      - name: Setup Python for Checkov
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+        with:
+          python-version: '3.11'
+
+      - name: Cache Security Tools
+        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
+        with:
+          path: |
+            ~/.local/bin
+            ~/.cache/pip
+          key: security-tools-${{ runner.os }}-v1
+
+      - name: Install Security Tools
+        run: |
+          # Install tflint
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+          # Install tfsec
+          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+
+          # Install checkov
+          pip install --user checkov
+
+          # Add tools to PATH
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Terraform Format Check
+        run: |
+          echo "🔍 Checking Terraform formatting..."
+          terraform fmt -check -recursive -diff .
+          if [ $? -ne 0 ]; then
+            echo "❌ Terraform files are not properly formatted"
+            echo "💡 Run 'terraform fmt -recursive' to fix formatting issues"
+            exit 1
+          fi
+          echo "✅ All Terraform files are properly formatted"
+
+      - name: Terraform Validate
+        run: |
+          echo "🔍 Validating Terraform configuration..."
+
+          # Validate root module
+          terraform init -backend=false
+          terraform validate
+
+          # Validate examples
+          for example in examples/*/; do
+            if [ -d "$example" ]; then
+              echo "🔍 Validating example: $example"
+              cd "$example"
+              terraform init -backend=false
+              terraform validate
+              cd - > /dev/null
+            fi
+          done
+
+          echo "✅ All Terraform configurations are valid"
+
+      - name: Setup TFLint Config
+        run: |
+          cat > .tflint.hcl << EOF
+          plugin "terraform" {
+            enabled = true
+            preset  = "recommended"
+          }
+
+          plugin "google" {
+            enabled = true
+            version = "0.25.0"
+            source  = "github.com/terraform-linters/tflint-ruleset-google"
+          }
+
+          rule "terraform_required_providers" {
+            enabled = true
+          }
+
+          rule "terraform_required_version" {
+            enabled = true
+          }
+
+          rule "terraform_naming_convention" {
+            enabled = true
+          }
+
+          rule "terraform_documented_variables" {
+            enabled = true
+          }
+
+          rule "terraform_documented_outputs" {
+            enabled = true
+          }
+          EOF
+
+      - name: Run TFLint
+        run: |
+          echo "🔍 Running TFLint checks..."
+          tflint --init
+          tflint --format=compact
+          echo "✅ TFLint checks completed"
+
+      - name: Run TFSec Security Scan
+        run: |
+          echo "🔍 Running TFSec security scan..."
+          tfsec . \
+            --format=json \
+            --out=tfsec-results.json \
+            --soft-fail
+
+          # Also output human-readable format
+          tfsec . --format=lovely
+          echo "✅ TFSec security scan completed"
+
+      - name: Run Checkov Security Scan
+        run: |
+          echo "🔍 Running Checkov security scan..."
+          checkov -d . \
+            --framework terraform \
+            --output json \
+            --output-file checkov-results.json \
+            --soft-fail
+
+          # Also output human-readable format
+          checkov -d . \
+            --framework terraform \
+            --compact \
+            --quiet
+          echo "✅ Checkov security scan completed"
+
+      - name: Upload Security Scan Results
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
+        if: always()
+        with:
+          name: security-scan-results
+          path: |
+            tfsec-results.json
+            checkov-results.json
+          retention-days: 30
+
+      - name: Test Examples
+        run: |
+          echo "🔍 Testing example configurations..."
+
+          for example in examples/*/; do
+            if [ -d "$example" ]; then
+              echo "🧪 Testing example: $example"
+              cd "$example"
+
+              # Check if terraform.tfvars.example exists
+              if [ -f "terraform.tfvars.example" ]; then
+                cp terraform.tfvars.example terraform.tfvars
+              fi
+
+              # Test terraform plan (without applying)
+              terraform init -backend=false
+              terraform plan -out=plan.tfplan
+
+              echo "✅ Example $example validated successfully"
+              cd - > /dev/null
+            fi
+          done
+
+      - name: Generate Security Report Summary
+        if: always()
+        run: |
+          echo "# 🛡️ Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f "tfsec-results.json" ]; then
+            TFSEC_ISSUES=$(jq '.results | length' tfsec-results.json 2>/dev/null || echo "0")
+            echo "**TFSec:** $TFSEC_ISSUES issues found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f "checkov-results.json" ]; then
+            CHECKOV_FAILED=$(jq '.summary.failed' checkov-results.json 2>/dev/null || echo "0")
+            CHECKOV_PASSED=$(jq '.summary.passed' checkov-results.json 2>/dev/null || echo "0")
+            echo "**Checkov:** $CHECKOV_FAILED failed, $CHECKOV_PASSED passed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📁 Detailed results are available in the workflow artifacts." >> $GITHUB_STEP_SUMMARY
