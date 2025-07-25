@@ -69,16 +69,14 @@ resource "google_container_cluster" "main" {
     }
   }
 
-  # Master authorized networks
-  dynamic "master_authorized_networks_config" {
-    for_each = length(var.authorized_networks) > 0 ? [1] : []
-    content {
-      dynamic "cidr_blocks" {
-        for_each = var.authorized_networks
-        content {
-          cidr_block   = cidr_blocks.value.cidr_block
-          display_name = cidr_blocks.value.display_name
-        }
+  # Master authorized networks (always enabled for security)
+  # Requires explicit configuration for access - no default access for security
+  master_authorized_networks_config {
+    dynamic "cidr_blocks" {
+      for_each = var.authorized_networks
+      content {
+        cidr_block   = cidr_blocks.value.cidr_block
+        display_name = cidr_blocks.value.display_name
       }
     }
   }
@@ -89,6 +87,12 @@ resource "google_container_cluster" "main" {
 
   workload_identity_config {
     workload_pool = "${var.project_id}.svc.id.goog"
+  }
+
+  # Security: Enable Workload Identity and security features
+  security_posture_config {
+    mode               = "BASIC"
+    vulnerability_mode = "VULNERABILITY_BASIC"
   }
 
   network_policy {

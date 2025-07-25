@@ -18,7 +18,7 @@ resource "google_container_node_pool" "main" {
 
   management {
     auto_repair  = true
-    auto_upgrade = false # Disabled for controlled updates
+    auto_upgrade = true # Enable for security updates
   }
 
   upgrade_settings {
