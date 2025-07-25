@@ -17,18 +17,10 @@ resource "google_project_service" "container" {
 resource "google_compute_network" "main" {
   count                   = var.create_vpc ? 1 : 0
   name                    = "${var.name}-vpc"
-  description             = "Custom VPC for ${var.name} GKE cluster"
+  description             = "Custom VPC for ${var.name} GKE cluster, managed by Terraform"
   auto_create_subnetworks = false
   routing_mode            = "REGIONAL"
-
-  labels = {
-    cluster_name = var.name
-    environment  = "gke"
-    managed_by   = "terraform"
-    component    = "network"
-  }
-
-  depends_on = [google_project_service.compute]
+  depends_on              = [google_project_service.compute]
 }
 
 # Primary subnet for GKE nodes
@@ -60,30 +52,15 @@ resource "google_compute_subnetwork" "main" {
 
   # Enable private Google Access
   private_ip_google_access = true
-
-  labels = {
-    cluster_name = var.name
-    environment  = "gke"
-    managed_by   = "terraform"
-    component    = "subnet"
-    subnet_type  = "primary"
-  }
 }
 
 # Router for NAT Gateway (always created when using custom VPC)
 resource "google_compute_router" "main" {
-  count   = var.create_vpc ? 1 : 0
-  name    = "${var.name}-router"
-  region  = var.region
-  network = google_compute_network.main[0].id
-
-  labels = {
-    cluster_name = var.name
-    environment  = "gke"
-    managed_by   = "terraform"
-    component    = "router"
-    purpose      = "nat_gateway"
-  }
+  count       = var.create_vpc ? 1 : 0
+  name        = "${var.name}-router"
+  region      = var.region
+  network     = google_compute_network.main[0].id
+  description = "Router for ${var.name} GKE cluster NAT Gateway, managed by Terraform"
 }
 
 # NAT Gateway for outbound internet access from private nodes
@@ -111,7 +88,7 @@ resource "google_compute_firewall" "deny_all_ingress" {
   count       = var.create_vpc ? 1 : 0
   name        = "${var.name}-deny-all-ingress"
   network     = google_compute_network.main[0].name
-  description = "[${var.name}] Default deny all ingress traffic for GKE cluster security"
+  description = "[${var.name}] Default deny all ingress traffic for GKE cluster security, managed by Terraform"
   direction   = "INGRESS"
   priority    = 65534
 
@@ -127,7 +104,7 @@ resource "google_compute_firewall" "allow_internal" {
   count       = var.create_vpc ? 1 : 0
   name        = "${var.name}-allow-internal"
   network     = google_compute_network.main[0].name
-  description = "[${var.name}] Allow internal GKE cluster communication within VPC subnets"
+  description = "[${var.name}] Allow internal GKE cluster communication within VPC subnets, managed by Terraform"
   direction   = "INGRESS"
   priority    = 1000
 

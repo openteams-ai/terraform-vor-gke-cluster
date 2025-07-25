@@ -116,7 +116,9 @@ resource "google_container_cluster" "main" {
 
   # Binary authorization (optional)
   # https://cloud.google.com/binary-authorization/docs/overview
-  enable_binary_authorization = var.enable_binary_authorization
+  binary_authorization {
+    evaluation_mode = var.enable_binary_authorization ? "PROJECT_SINGLETON_POLICY_ENFORCE" : "DISABLED"
+  }
 
   # Database encryption (optional)
   dynamic "database_encryption" {

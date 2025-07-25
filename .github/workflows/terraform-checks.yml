@@ -1,5 +1,8 @@
 name: "Terraform Static Checks"
 
+# This workflow runs the same checks available locally via Makefile
+# For local development, use: make check test
+
 on:
   push:
     branches: [ "main"]
