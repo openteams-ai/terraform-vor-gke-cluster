@@ -44,8 +44,7 @@ resource "google_container_node_pool" "main" {
 
     # Security: Workload metadata security
     workload_metadata_config {
-      mode          = "GKE_METADATA"
-      node_metadata = "GKE_METADATA_SERVER"
+      mode = "GKE_METADATA"
     }
 
     # Node taints
