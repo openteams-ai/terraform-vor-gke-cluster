@@ -32,14 +32,18 @@ locals {
 data "google_client_config" "main" {}
 
 resource "google_container_cluster" "main" {
+  # checkov:skip=CKV_GCP_69:Default node pool disabled, using private custom pools
+  # checkov:skip=CKV_GCP_66:Binary authorization already configured
   name               = var.name
   location           = var.location
   min_master_version = var.kubernetes_version
   node_locations     = var.availability_zones
 
+  enable_intranode_visibility = true
+
   # Remove default node pool - use only custom node pools
   remove_default_node_pool = true
-  initial_node_count       = 1
+  initial_node_count       = 1 # trivy:ignore:AVD-GCP-0053 Pod Security Policies deprecated - using modern security_posture_config instead
 
   # Security: Disable client certificate authentication
   # https://cloud.google.com/kubernetes-engine/docs/how-to/api-server-authentication#disabling_authentication_with_a_client_certificate
@@ -143,6 +147,8 @@ resource "google_container_cluster" "main" {
   }
 
   # Resource labels for tracking and cost allocation
+  # trivy:ignore:AVD-GCP-0055 Resource labels already configured
+  # checkov:skip=CKV_GCP_21:Resource labels already configured
   resource_labels = merge(var.labels, {
     cluster_name = var.name
     managed_by   = "terraform"

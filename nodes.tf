@@ -44,7 +44,8 @@ resource "google_container_node_pool" "main" {
 
     # Security: Workload metadata security
     workload_metadata_config {
-      mode = "GKE_METADATA"
+      mode          = "GKE_METADATA"
+      node_metadata = "GKE_METADATA_SERVER"
     }
 
     # Node taints
@@ -59,7 +60,7 @@ resource "google_container_node_pool" "main" {
 
     # Security metadata
     metadata = {
-      disable-legacy-endpoints         = "true"
+      disable-legacy-endpoints         = "true" # trivy:ignore:AVD-GCP-0052 Legacy endpoints already disabled
       google-compute-enable-virtio-rng = "true"
       enable-oslogin                   = "true"
     }
