@@ -1,0 +1,10 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+# Required variables
+project_id = "your-gcp-project-id"
+region     = "us-central1"
+location   = "us-central1-a"
+
+# Optional variables
+cluster_name       = "vor-basic-cluster"
+kubernetes_version = "1.28"

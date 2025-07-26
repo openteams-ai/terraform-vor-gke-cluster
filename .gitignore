@@ -40,6 +40,8 @@ terraform.rc
 # Makefile generated files
 reports/
 .tflint.hcl
+trivy-results.json
+checkov-results.json
 
 # OpenTofu files (same as Terraform)
 .tofu/

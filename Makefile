@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Makefile for Vor Terraform GKE Module
-# Provides local development tools for linting, validation, and security scanning
+# Provides loca	@echo "🧹 Cleaning up..." development tools for linting, validation, and security scanning
 
-.PHONY: help install-tools validate lint security clean all
+.PHONY: help install-tools validate lint security-trivy security-checkov security clean all
 
 # Default target
 help: ## Show this help message
@@ -32,6 +32,17 @@ install-tools: ## Install required development tools
 	else \
 		echo "✅ TFLint already installed: $$(tflint --version)"; \
 	fi
+	@# Install Trivy (replaces TFSec)
+	@if ! command -v trivy >/dev/null 2>&1; then \
+		echo "📦 Installing Trivy..."; \
+		if [ "$$(uname)" = "Darwin" ]; then \
+			brew install aquasecurity/trivy/trivy; \
+		else \
+			curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b ~/.local/bin; \
+		fi; \
+	else \
+		echo "✅ Trivy already installed: $$(trivy --version | head -n1)"; \
+	fi
 	@# Install Checkov
 	@if ! command -v checkov >/dev/null 2>&1; then \
 		echo "📦 Installing Checkov..."; \
@@ -49,7 +60,7 @@ validate: ## Validate Terraform configuration
 	@tofu init -backend=false
 	@tofu validate
 	@# Validate examples
-	@for example in examples/*/; do \
+	@for example in docs/examples/*/; do \
 		if [ -d "$$example" ]; then \
 			echo "📂 Validating example: $$example"; \
 			(cd "$$example" && tofu init -backend=false && tofu validate); \
@@ -70,7 +81,25 @@ lint: setup-tflint ## Run TFLint checks
 	@echo "✅ TFLint checks completed"
 
 # Security scanning
-security: ## Run Checkov security scan
+security-trivy: ## Run Trivy security scan
+	@echo "🔍 Running Trivy security scan..."
+	@mkdir -p reports
+	@trivy config . \
+		--format json \
+		--output reports/trivy-results.json \
+		--exit-code 0
+	@echo ""
+	@echo "📊 Trivy Results Summary:"
+	@if [ -f "reports/trivy-results.json" ]; then \
+		ISSUES=$$(jq '.Results[]? | select(.Misconfigurations) | .Misconfigurations | length' reports/trivy-results.json 2>/dev/null | awk '{sum+=$$1} END {print sum+0}'); \
+		echo "   Issues found: $$ISSUES"; \
+		if [ "$$ISSUES" != "0" ]; then \
+			echo "   📁 Detailed results: reports/trivy-results.json"; \
+		fi; \
+	fi
+	@echo "✅ Trivy security scan completed"
+
+security-checkov: ## Run Checkov security scan
 	@echo "🔍 Running Checkov security scan..."
 	@mkdir -p reports
 	@checkov -d . \
@@ -91,6 +120,22 @@ security: ## Run Checkov security scan
 	fi
 	@echo "✅ Checkov security scan completed"
 
+security: security-trivy security-checkov ## Run all security scans
+	@echo ""
+	@echo "🛡️ Security Scan Summary"
+	@echo "========================"
+	@if [ -f "reports/trivy-results.json" ]; then \
+		TRIVY_ISSUES=$$(jq '.Results[]? | select(.Misconfigurations) | .Misconfigurations | length' reports/trivy-results.json 2>/dev/null | awk '{sum+=$$1} END {print sum+0}'); \
+		echo "Trivy: $$TRIVY_ISSUES issues found"; \
+	fi
+	@if [ -f "reports/checkov-results.json" ]; then \
+		CHECKOV_FAILED=$$(jq '.summary.failed' reports/checkov-results.json 2>/dev/null || echo "0"); \
+		CHECKOV_PASSED=$$(jq '.summary.passed' reports/checkov-results.json 2>/dev/null || echo "0"); \
+		echo "Checkov: $$CHECKOV_FAILED failed, $$CHECKOV_PASSED passed"; \
+	fi
+	@echo ""
+	@echo "📁 Detailed results available in reports/ directory"
+
 # Cleanup
 clean: ## Clean up generated files and reports
 	@echo "� Cleaning up..."
@@ -98,7 +143,7 @@ clean: ## Clean up generated files and reports
 	@rm -rf reports/
 	@rm -f .tflint.hcl
 	@find . -name "plan.tfplan" -delete
-	@find . -name "terraform.tfvars" -path "*/examples/*" -delete
+	@find . -name "terraform.tfvars" -path "*/docs/examples/*" -delete
 	@echo "✅ Cleanup completed"
 
 # Complete workflow

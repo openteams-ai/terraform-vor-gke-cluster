@@ -41,8 +41,13 @@ jobs:
           # Install tflint
           curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
 
-          # Install tfsec
-          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+          # Install Trivy (replaces tfsec)
+          sudo apt-get update
+          sudo apt-get install wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy
 
           # Install checkov
           pip install --user checkov
@@ -124,17 +129,19 @@ jobs:
           tflint --format=compact
           echo "✅ TFLint checks completed"
 
-      - name: Run TFSec Security Scan
+      - name: Run Trivy Security Scan
         run: |
-          echo "🔍 Running TFSec security scan..."
-          tfsec . \
-            --format=json \
-            --out=tfsec-results.json \
-            --soft-fail
+          echo "🔍 Running Trivy security scan..."
+          # Run Trivy with JSON output for artifacts
+          trivy config . \
+            --format json \
+            --output trivy-results.json \
+            --exit-code 0
 
-          # Also output human-readable format
-          tfsec . --format=lovely
-          echo "✅ TFSec security scan completed"
+          # Also output human-readable format for logs
+          echo "📊 Trivy Security Results:"
+          trivy config . --format table
+          echo "✅ Trivy security scan completed"
 
       - name: Run Checkov Security Scan
         run: |
@@ -158,7 +165,7 @@ jobs:
         with:
           name: security-scan-results
           path: |
-            tfsec-results.json
+            trivy-results.json
             checkov-results.json
           retention-days: 30
 
@@ -191,9 +198,9 @@ jobs:
           echo "# 🛡️ Security Scan Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [ -f "tfsec-results.json" ]; then
-            TFSEC_ISSUES=$(jq '.results | length' tfsec-results.json 2>/dev/null || echo "0")
-            echo "**TFSec:** $TFSEC_ISSUES issues found" >> $GITHUB_STEP_SUMMARY
+          if [ -f "trivy-results.json" ]; then
+            TRIVY_ISSUES=$(jq '.Results[] | select(.Misconfigurations) | .Misconfigurations | length' trivy-results.json 2>/dev/null | awk '{sum+=$1} END {print sum+0}')
+            echo "**Trivy:** $TRIVY_ISSUES issues found" >> $GITHUB_STEP_SUMMARY
           fi
 
           if [ -f "checkov-results.json" ]; then
