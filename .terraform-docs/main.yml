@@ -1,0 +1,284 @@
+version: ">= 0.16"
+
+formatter: markdown
+
+header-from: docs/README-header.md
+footer-from: docs/README-footer.md
+
+sections:
+  show:
+    - header
+    - requirements
+    - providers
+    - modules
+    - resources
+    - inputs
+    - outputs
+    - footer
+
+content: |-
+  {{ .Header }}
+
+  {{ .Requirements }}
+  {{ .Providers }}
+  {{ .Modules }}
+  {{ .Resources }}
+  {{ .Inputs }}
+  {{ .Outputs }}
+
+  {{ .Footer }}
+
+output:
+  file: README.md
+  mode: inject
+  template: |-
+    <!-- BEGINNING OF PRE-COMMIT-TERRAFORM-DOCS HOOK -->
+    {{ .Content }}
+    <!-- END OF PRE-COMMIT-TERRAFORM-DOCS HOOK -->
+
+settings:
+  anchor: true
+  color: true
+  default: true
+  description: false
+  escape: true
+  hide-empty: false
+  html: true
+  indent: 2
+  lockfile: true
+  read-comments: true
+  required: true
+  sensitive: true
+  type: true
+
+---
+# .terraform-docs/cluster.yml - Cluster component configuration
+version: ">= 0.16"
+
+formatter: markdown
+
+header-from: docs/components/cluster-header.md
+
+sections:
+  show:
+    - header
+    - requirements
+    - providers
+    - modules
+    - resources
+    - inputs
+    - outputs
+
+content: |-
+  ## Technical Reference - Cluster Component
+
+  > This is the auto-generated technical reference for the cluster component.
+  > For architectural guidance and security explanations, see the [cluster configuration guide](cluster-header.md).
+
+  ## Resources
+
+  This component manages the following resources:
+
+  {{ range .Module.Resources }}
+  - {{ .GetMode }}.{{ .Spec }} ({{ .Position.Filename }}#{{ .Position.Line }})
+  {{- end }}
+
+  {{ .Requirements }}
+  {{ .Providers }}
+  {{ .Modules }}
+  {{ .Resources }}
+  {{ .Inputs }}
+  {{ .Outputs }}
+
+output:
+  file: docs/components/cluster.md
+  mode: replace
+
+settings:
+  anchor: true
+  color: true
+  default: true
+  description: false
+  escape: true
+  hide-empty: false
+  html: true
+  indent: 2
+  lockfile: true
+  read-comments: true
+  required: true
+  sensitive: true
+  type: true
+
+---
+# .terraform-docs/network.yml - Network component configuration
+version: ">= 0.16"
+
+formatter: markdown
+
+header-from: docs/components/network-header.md
+
+sections:
+  show:
+    - header
+    - requirements
+    - providers
+    - modules
+    - resources
+    - inputs
+    - outputs
+
+content: |-
+  ## Technical Reference - Network Component
+
+  > This is the auto-generated technical reference for the network component.
+  > For architectural guidance and security explanations, see the [network configuration guide](network-header.md).
+
+  ## Resources
+
+  This component manages the following resources:
+
+  {{ range .Module.Resources }}
+  - {{ .GetMode }}.{{ .Spec }} ({{ .Position.Filename }}#{{ .Position.Line }})
+  {{- end }}
+
+  {{ .Requirements }}
+  {{ .Providers }}
+  {{ .Modules }}
+  {{ .Resources }}
+  {{ .Inputs }}
+  {{ .Outputs }}
+
+output:
+  file: docs/components/network.md
+  mode: replace
+
+settings:
+  anchor: true
+  color: true
+  default: true
+  description: false
+  escape: true
+  hide-empty: false
+  html: true
+  indent: 2
+  lockfile: true
+  read-comments: true
+  required: true
+  sensitive: true
+  type: true
+
+---
+# .terraform-docs/nodes.yml - Nodes component configuration
+version: ">= 0.16"
+
+formatter: markdown
+
+header-from: docs/components/nodes-header.md
+
+sections:
+  show:
+    - header
+    - requirements
+    - providers
+    - modules
+    - resources
+    - inputs
+    - outputs
+
+content: |-
+  ## Technical Reference - Nodes Component
+
+  > This is the auto-generated technical reference for the nodes component.
+  > For architectural guidance and security explanations, see the [nodes configuration guide](nodes-header.md).
+
+  ## Resources
+
+  This component manages the following resources:
+
+  {{ range .Module.Resources }}
+  - {{ .GetMode }}.{{ .Spec }} ({{ .Position.Filename }}#{{ .Position.Line }})
+  {{- end }}
+
+  {{ .Requirements }}
+  {{ .Providers }}
+  {{ .Modules }}
+  {{ .Resources }}
+  {{ .Inputs }}
+  {{ .Outputs }}
+
+output:
+  file: docs/components/nodes.md
+  mode: replace
+
+settings:
+  anchor: true
+  color: true
+  default: true
+  description: false
+  escape: true
+  hide-empty: false
+  html: true
+  indent: 2
+  lockfile: true
+  read-comments: true
+  required: true
+  sensitive: true
+  type: true
+
+---
+# .terraform-docs/policies.yml - Policies component configuration
+version: ">= 0.16"
+
+formatter: markdown
+
+header-from: docs/components/policies-header.md
+
+sections:
+  show:
+    - header
+    - requirements
+    - providers
+    - modules
+    - resources
+    - inputs
+    - outputs
+
+content: |-
+  ## Technical Reference - Policies Component
+
+  > This is the auto-generated technical reference for the policies component.
+  > For architectural guidance and security explanations, see the [policies configuration guide](policies-header.md).
+
+  ## Resources
+
+  This component manages the following resources:
+
+  {{ range .Module.Resources }}
+  - {{ .GetMode }}.{{ .Spec }} ({{ .Position.Filename }}#{{ .Position.Line }})
+  {{- end }}
+
+  {{ .Requirements }}
+  {{ .Providers }}
+  {{ .Modules }}
+  {{ .Resources }}
+  {{ .Inputs }}
+  {{ .Outputs }}
+
+output:
+  file: docs/components/policies.md
+  mode: replace
+
+settings:
+  anchor: true
+  color: true
+  default: true
+  description: false
+  escape: true
+  hide-empty: false
+  html: true
+  indent: 2
+  lockfile: true
+  read-comments: true
+  required: true
+  sensitive: true
+  type: true
