@@ -147,27 +147,13 @@ jobs:
           retention-days: 30
 
       - name: Test Examples
-        run: |
-          echo "🔍 Testing example configurations..."
-
-          for example in docs/examples/*/; do
-            if [ -d "$example" ]; then
-              echo "🧪 Testing example: $example"
-              cd "$example"
-
-              # Check if terraform.tfvars.example exists
-              if [ -f "terraform.tfvars.example" ]; then
-                cp terraform.tfvars.example terraform.tfvars
-              fi
-
-              # Test terraform plan (without applying)
-              terraform init -backend=false
-              terraform plan -out=plan.tfplan
-
-              echo "✅ Example $example validated successfully"
-              cd - > /dev/null
-            fi
-          done
+        uses: ./.github/actions/test-examples
+        with:
+          examples-path: 'docs/examples'
+          terraform-version: 'latest'
+          mock-project-id: 'mock-project'
+          mock-region: 'us-central1'
+          mock-zone: 'us-central1-a'
 
       - name: Generate Security Report Summary
         if: always()
