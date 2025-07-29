@@ -2,17 +2,9 @@ name: Test Terraform Examples
 
 on:
   push:
-    branches: [ main, develop ]
-    paths:
-      - 'docs/examples/**'
-      - '.github/workflows/test-examples.yml'
-      - '.github/actions/test-examples/**'
+    branches: [ main]
   pull_request:
     branches: [ main ]
-    paths:
-      - 'docs/examples/**'
-      - '.github/workflows/test-examples.yml'
-      - '.github/actions/test-examples/**'
   workflow_dispatch:
     inputs:
       examples-path:
@@ -38,20 +30,20 @@ jobs:
       - name: Discover example directories
         id: set-matrix
         run: |
-          EXAMPLES_PATH="${{ github.event.inputs.examples-path || 'docs/examples' }}"
+          EXAMPLES_PATH="docs/examples"
           echo "🔍 Discovering examples in $EXAMPLES_PATH..."
 
-          # Find all directories under examples path
+          # Find all directories under examples path and store in temp file
+          find "$EXAMPLES_PATH" -maxdepth 1 -type d -not -path "$EXAMPLES_PATH" | while read -r example_dir; do
+            basename "$example_dir"
+          done > /tmp/examples.txt
+
+          # Read examples into array
           examples=()
-          if [ -d "$EXAMPLES_PATH" ]; then
-            for example_dir in "$EXAMPLES_PATH"/*/; do
-              if [ -d "$example_dir" ]; then
-                example_name=$(basename "$example_dir")
-                examples+=("$example_name")
-                echo "📁 Found example: $example_name"
-              fi
-            done
-          fi
+          while IFS= read -r example_name; do
+            examples+=("$example_name")
+            echo "📁 Found example: $example_name"
+          done < /tmp/examples.txt
 
           # Check if we found any examples
           if [ ${#examples[@]} -eq 0 ]; then
@@ -61,12 +53,14 @@ jobs:
             exit 1
           fi
 
-          # Convert bash array to JSON array for matrix
-          printf -v examples_json '%s\n' "${examples[@]}" | jq -R . | jq -s .
-          echo "matrix=$examples_json" >> $GITHUB_OUTPUT
+          # Use jq to create proper JSON array
+          matrix_json=$(printf '%s\n' "${examples[@]}" | jq -R . | jq -s .)
+
+          echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
           echo "examples-count=${#examples[@]}" >> $GITHUB_OUTPUT
 
           echo "📊 Generated matrix for ${#examples[@]} examples: ${examples[*]}"
+          echo "🔧 Matrix JSON: $matrix_json"
 
   # Second job: Test each example in parallel using matrix strategy
   test-examples:
