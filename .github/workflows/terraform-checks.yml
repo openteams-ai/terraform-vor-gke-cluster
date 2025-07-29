@@ -28,6 +28,13 @@ jobs:
         with:
           python-version: '3.11'
 
+      - uses: actions/checkout@v2
+
+      - uses: terraform-linters/setup-tflint@v4
+        name: Setup TFLint
+        with:
+          tflint_version: v0.52.0
+
       - name: Cache Security Tools
         uses: actions/cache@v4.2.3
         with:
@@ -35,25 +42,6 @@ jobs:
             ~/.local/bin
             ~/.cache/pip
           key: security-tools-${{ runner.os }}-v1
-
-      - name: Install Security Tools
-        run: |
-          # Install tflint
-          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-
-          # Install Trivy (replaces tfsec)
-          sudo apt-get update
-          sudo apt-get install wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install trivy
-
-          # Install checkov
-          pip install --user checkov
-
-          # Add tools to PATH
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Terraform Format Check
         run: |
@@ -122,6 +110,11 @@ jobs:
           }
           EOF
 
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.52.0
+
       - name: Run TFLint
         run: |
           echo "🔍 Running TFLint checks..."
@@ -129,27 +122,27 @@ jobs:
           tflint --format=compact
           echo "✅ TFLint checks completed"
 
-      - name: Run Trivy Security Scan
-        run: |
-          echo "🔍 Running Trivy security scan..."
-          # Run Trivy with JSON output for artifacts
-          trivy config . \
-            --format json \
-            --output trivy-results.json \
-            --exit-code 0
-
-          # Also output human-readable format for logs
-          echo "📊 Trivy Security Results:"
-          trivy config . --format table
-          echo "✅ Trivy security scan completed"
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: config,secret
+          format: table,json
+          output: trivy-results.json
+          exit-code: 0
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          vuln-type: os,library
+          skip-dirs: examples
 
       - name: Run Checkov Security Scan
-        run: |
-          echo "🔍 Running Checkov security scan..."
-          checkov -d . \
-            --framework terraform \
-            --output-file checkov-results.txt
-          echo "✅ Checkov security scan completed"
+        id: checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform
+          quiet: true # display only failed checks
+          compact: true
+          output_file_path: checkov-results.txt
 
       - name: Upload Security Scan Results
         uses: actions/upload-artifact@v4.6.2
