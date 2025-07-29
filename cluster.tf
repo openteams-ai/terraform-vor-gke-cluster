@@ -40,6 +40,8 @@ resource "google_container_cluster" "main" {
   node_locations     = var.availability_zones
 
   enable_intranode_visibility = true
+  # Whether Terraform will be prevented from destroying the cluster
+  deletion_protection = false
 
   # Remove default node pool - use only custom node pools
   remove_default_node_pool = true
