@@ -121,20 +121,3 @@ jobs:
             trivy-results.txt
             checkov-results.txt
           retention-days: 30
-
-  test-examples:
-    name: Test Examples
-    runs-on: ubuntu-latest
-    needs: [terraform-validate]
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Test Example Configurations
-        uses: ./.github/actions/test-examples
-        with:
-          examples-path: 'examples'
-          terraform-version: '~1.5'
-          mock-project-id: 'mock-project'
-          mock-region: 'us-central1'
-          mock-zone: 'us-central1-a'

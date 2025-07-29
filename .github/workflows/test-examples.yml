@@ -2,23 +2,15 @@ name: Test Terraform Examples
 
 on:
   push:
-    branches: [ main, develop ]
-    paths:
-      - 'docs/examples/**'
-      - '.github/workflows/test-examples.yml'
-      - '.github/actions/test-examples/**'
+    branches: [ main ]
   pull_request:
     branches: [ main ]
-    paths:
-      - 'docs/examples/**'
-      - '.github/workflows/test-examples.yml'
-      - '.github/actions/test-examples/**'
   workflow_dispatch:
     inputs:
       examples-path:
         description: 'Path to examples directory'
         required: false
-        default: 'docs/examples'
+        default: 'examples'
       terraform-version:
         description: 'Terraform version to use'
         required: false
