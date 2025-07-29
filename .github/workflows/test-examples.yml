@@ -93,7 +93,7 @@ jobs:
           mock-project-id: 'mock-project-${{ matrix.example }}'
           mock-region: 'us-central1'
           mock-zone: 'us-central1-a'
-          verbose: ${{ github.event.inputs.verbose || 'false' }}
+          verbose: '${{ github.event.inputs.verbose || true }}'
 
       - name: Report Results
         if: always()
