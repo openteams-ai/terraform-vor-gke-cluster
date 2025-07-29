@@ -2,9 +2,17 @@ name: Test Terraform Examples
 
 on:
   push:
-    branches: [ main]
+    branches: [ main, develop ]
+    paths:
+      - 'docs/examples/**'
+      - '.github/workflows/test-examples.yml'
+      - '.github/actions/test-examples/**'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'docs/examples/**'
+      - '.github/workflows/test-examples.yml'
+      - '.github/actions/test-examples/**'
   workflow_dispatch:
     inputs:
       examples-path:
@@ -33,17 +41,17 @@ jobs:
           EXAMPLES_PATH="docs/examples"
           echo "🔍 Discovering examples in $EXAMPLES_PATH..."
 
-          # Find all directories under examples path and store in temp file
-          find "$EXAMPLES_PATH" -maxdepth 1 -type d -not -path "$EXAMPLES_PATH" | while read -r example_dir; do
-            basename "$example_dir"
-          done > /tmp/examples.txt
-
-          # Read examples into array
+          # Find all directories under examples path
           examples=()
-          while IFS= read -r example_name; do
-            examples+=("$example_name")
-            echo "📁 Found example: $example_name"
-          done < /tmp/examples.txt
+          if [ -d "$EXAMPLES_PATH" ]; then
+            for example_dir in "$EXAMPLES_PATH"/*/; do
+              if [ -d "$example_dir" ]; then
+                example_name=$(basename "$example_dir")
+                examples+=("$example_name")
+                echo "📁 Found example: $example_name"
+              fi
+            done
+          fi
 
           # Check if we found any examples
           if [ ${#examples[@]} -eq 0 ]; then
@@ -53,8 +61,8 @@ jobs:
             exit 1
           fi
 
-          # Use jq to create proper JSON array
-          matrix_json=$(printf '%s\n' "${examples[@]}" | jq -R . | jq -s .)
+          # Use jq to create compact JSON array (single line, no spaces)
+          matrix_json=$(printf '%s\n' "${examples[@]}" | jq -R . | jq -s -c .)
 
           echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
           echo "examples-count=${#examples[@]}" >> $GITHUB_OUTPUT
