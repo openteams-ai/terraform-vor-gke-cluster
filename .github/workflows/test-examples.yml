@@ -90,7 +90,7 @@ jobs:
         id: test-example
         uses: ./.github/actions/test-examples
         with:
-          examples-path: 'docs/examples/${{ matrix.example }}'
+          example-path: 'docs/examples/${{ matrix.example }}'
           terraform-version: ${{ github.event.inputs.terraform-version || 'latest' }}
           mock-project-id: 'mock-project-${{ matrix.example }}'
           mock-region: 'us-central1'
@@ -101,10 +101,14 @@ jobs:
         run: |
           if [ "${{ steps.test-example.outcome }}" == "success" ]; then
             echo "✅ Example '${{ matrix.example }}' passed all tests"
-            echo "📊 Examples tested: ${{ steps.test-example.outputs.examples-tested }}"
-            echo "📊 Examples passed: ${{ steps.test-example.outputs.examples-passed }}"
+            echo "📊 Test result: ${{ steps.test-example.outputs.test-result }}"
+            echo "📊 Init success: ${{ steps.test-example.outputs.init-success }}"
+            echo "📊 Plan success: ${{ steps.test-example.outputs.plan-success }}"
           else
             echo "❌ Example '${{ matrix.example }}' failed tests"
+            echo "📊 Test result: ${{ steps.test-example.outputs.test-result }}"
+            echo "📊 Init success: ${{ steps.test-example.outputs.init-success }}"
+            echo "📊 Plan success: ${{ steps.test-example.outputs.plan-success }}"
             exit 1
           fi
 
