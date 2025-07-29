@@ -12,6 +12,11 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Default values (can be overridden by environment variables)
+DEFAULT_PROJECT_ID="${MOCK_PROJECT_ID:-mock-project}"
+DEFAULT_REGION="${MOCK_REGION:-us-central1}"
+DEFAULT_ZONE="${MOCK_ZONE:-us-central1-a}"
+
 # Function to print colored output
 print_status() {
     local color=$1
@@ -21,25 +26,29 @@ print_status() {
 
 # Function to create mock credentials JSON file
 create_mock_credentials() {
-    cat > mock-credentials.json << 'EOF'
+    local project_id=$1
+    cat > mock-credentials.json << EOF
 {
   "type": "service_account",
-  "project_id": "mock-project",
+  "project_id": "$project_id",
   "private_key_id": "mock-key-id",
   "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC8Q7HgL8Y9L9rX\nMOCK_PRIVATE_KEY_CONTENT_HERE\n-----END PRIVATE KEY-----\n",
-  "client_email": "mock@mock-project.iam.gserviceaccount.com",
+  "client_email": "mock@$project_id.iam.gserviceaccount.com",
   "client_id": "123456789012345678901",
   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
   "token_uri": "https://oauth2.googleapis.com/token",
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/mock%40mock-project.iam.gserviceaccount.com"
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/mock%40$project_id.iam.gserviceaccount.com"
 }
 EOF
 }
 
 # Function to create provider override file
 create_provider_override() {
-    cat > provider_override.tf << 'EOF'
+    local project_id=$1
+    local region=$2
+    local zone=$3
+    cat > provider_override.tf << EOF
 # Mock provider configuration for testing
 terraform {
   required_providers {
@@ -51,9 +60,9 @@ terraform {
 }
 
 provider "google" {
-  project = "mock-project"
-  region  = "us-central1"
-  zone    = "us-central1-a"
+  project = "$project_id"
+  region  = "$region"
+  zone    = "$zone"
   credentials = file("mock-credentials.json")
   user_project_override = false
 }
@@ -71,6 +80,9 @@ test_example() {
     local example_dir=$1
     local example_name=$(basename "$example_dir")
     local show_output=${2:-false}
+    local project_id=${3:-$DEFAULT_PROJECT_ID}
+    local region=${4:-$DEFAULT_REGION}
+    local zone=${5:-$DEFAULT_ZONE}
 
     print_status "$BLUE" "🧪 Testing example: $example_name"
 
@@ -83,40 +95,56 @@ test_example() {
     fi
 
     # Create mock files
-    create_provider_override
-    create_mock_credentials
+    create_provider_override "$project_id" "$region" "$zone"
+    create_mock_credentials "$project_id"
+
+    # Determine which terraform binary to use
+    TERRAFORM_CMD="terraform"
+    if command -v tofu &> /dev/null; then
+        TERRAFORM_CMD="tofu"
+        print_status "$BLUE" "🔧 Using OpenTofu instead of Terraform"
+    fi
 
     # Initialize Terraform
-    print_status "$BLUE" "🔧 Initializing Terraform for $example_name..."
+    print_status "$BLUE" "🔧 Initializing $TERRAFORM_CMD for $example_name..."
     if [ "$show_output" = true ]; then
-        init_output=$(tofu init -backend=false 2>&1)
+        init_output=$($TERRAFORM_CMD init -backend=false 2>&1)
         init_result=$?
         echo "$init_output"
     else
-        init_output=$(tofu init -backend=false 2>&1)
+        init_output=$($TERRAFORM_CMD init -backend=false 2>&1)
         init_result=$?
     fi
 
     if [ $init_result -eq 0 ]; then
-        print_status "$GREEN" "✅ Terraform init successful for $example_name"
+        print_status "$GREEN" "✅ $TERRAFORM_CMD init successful for $example_name"
 
-        print_status "$BLUE" "📋 Running Terraform plan for $example_name..."
+        print_status "$BLUE" "📋 Running $TERRAFORM_CMD plan for $example_name..."
         if [ "$show_output" = true ]; then
-            plan_output=$(tofu plan -out=plan.tfplan -var="project_id=mock-project" -var="region=us-central1" -var="location=us-central1-a" 2>&1)
+            plan_output=$($TERRAFORM_CMD plan -out=plan.tfplan \
+                -var="project_id=$project_id" \
+                -var="region=$region" \
+                -var="location=$zone" \
+                -detailed-exitcode 2>&1)
             plan_result=$?
             echo "$plan_output"
         else
-            plan_output=$(tofu plan -out=plan.tfplan -var="project_id=mock-project" -var="region=us-central1" -var="location=us-central1-a" 2>&1)
+            plan_output=$($TERRAFORM_CMD plan -out=plan.tfplan \
+                -var="project_id=$project_id" \
+                -var="region=$region" \
+                -var="location=$zone" \
+                -detailed-exitcode 2>&1)
             plan_result=$?
         fi
 
+        # Exit codes: 0 = no changes, 1 = error, 2 = changes planned
         if [ $plan_result -eq 0 ] || [ $plan_result -eq 2 ]; then
-            print_status "$GREEN" "✅ Terraform plan successful for $example_name"
+            print_status "$GREEN" "✅ $TERRAFORM_CMD plan successful for $example_name"
             cleanup_test_files
             cd - > /dev/null
             return 0
         else
-            print_status "$YELLOW" "⚠️ Terraform plan failed for $example_name"
+            print_status "$YELLOW" "⚠️ $TERRAFORM_CMD plan failed for $example_name"
             if [ "$show_output" = false ]; then
                 echo "Plan output:"
                 echo "$plan_output"
@@ -126,7 +154,7 @@ test_example() {
             return 1
         fi
     else
-        print_status "$RED" "❌ Terraform init failed for example: $example_name"
+        print_status "$RED" "❌ $TERRAFORM_CMD init failed for example: $example_name"
         if [ "$show_output" = false ]; then
             echo "Init output:"
             echo "$init_output"
@@ -137,10 +165,30 @@ test_example() {
     fi
 }
 
+# Function to show usage
+show_usage() {
+    echo "Usage: $0 [OPTIONS]"
+    echo "Options:"
+    echo "  -v, --verbose           Show terraform output"
+    echo "  -e, --example NAME      Test specific example (e.g., basic)"
+    echo "  -p, --project-id ID     Mock GCP project ID (default: $DEFAULT_PROJECT_ID)"
+    echo "  -r, --region REGION     Mock GCP region (default: $DEFAULT_REGION)"
+    echo "  -z, --zone ZONE         Mock GCP zone (default: $DEFAULT_ZONE)"
+    echo "  -h, --help              Show this help message"
+    echo ""
+    echo "Environment variables:"
+    echo "  MOCK_PROJECT_ID         Override default project ID"
+    echo "  MOCK_REGION             Override default region"
+    echo "  MOCK_ZONE               Override default zone"
+}
+
 # Main function
 main() {
     local show_output=false
     local specific_example=""
+    local project_id="$DEFAULT_PROJECT_ID"
+    local region="$DEFAULT_REGION"
+    local zone="$DEFAULT_ZONE"
 
     # Parse command line arguments
     while [[ $# -gt 0 ]]; do
@@ -153,25 +201,35 @@ main() {
                 specific_example="$2"
                 shift 2
                 ;;
+            -p|--project-id)
+                project_id="$2"
+                shift 2
+                ;;
+            -r|--region)
+                region="$2"
+                shift 2
+                ;;
+            -z|--zone)
+                zone="$2"
+                shift 2
+                ;;
             -h|--help)
-                echo "Usage: $0 [OPTIONS]"
-                echo "Options:"
-                echo "  -v, --verbose    Show terraform output"
-                echo "  -e, --example    Test specific example (e.g., basic)"
-                echo "  -h, --help       Show this help message"
+                show_usage
                 exit 0
                 ;;
             *)
                 echo "Unknown option: $1"
+                show_usage
                 exit 1
                 ;;
         esac
     done
 
     print_status "$BLUE" "🧪 Testing example configurations with mocked credentials..."
+    print_status "$BLUE" "📋 Using project: $project_id, region: $region, zone: $zone"
 
     # Set up mock environment variables
-    export GOOGLE_PROJECT="mock-project"
+    export GOOGLE_PROJECT="$project_id"
 
     examples_tested=0
     examples_passed=0
@@ -180,7 +238,7 @@ main() {
         # Test specific example
         if [ -d "examples/$specific_example" ]; then
             examples_tested=1
-            if test_example "examples/$specific_example" "$show_output"; then
+            if test_example "examples/$specific_example" "$show_output" "$project_id" "$region" "$zone"; then
                 examples_passed=1
             fi
         else
@@ -189,10 +247,15 @@ main() {
         fi
     else
         # Test all examples
+        if [ ! -d "examples" ]; then
+            print_status "$RED" "❌ Examples directory not found"
+            exit 1
+        fi
+
         for example in examples/*/; do
             if [ -d "$example" ]; then
                 examples_tested=$((examples_tested + 1))
-                if test_example "$example" "$show_output"; then
+                if test_example "$example" "$show_output" "$project_id" "$region" "$zone"; then
                     examples_passed=$((examples_passed + 1))
                 fi
                 echo ""

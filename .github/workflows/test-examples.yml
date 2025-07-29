@@ -15,6 +15,11 @@ on:
         description: 'Terraform version to use'
         required: false
         default: 'latest'
+      verbose:
+        description: 'Show detailed terraform output'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   # First job: Generate the matrix of examples to test
@@ -88,6 +93,7 @@ jobs:
           mock-project-id: 'mock-project-${{ matrix.example }}'
           mock-region: 'us-central1'
           mock-zone: 'us-central1-a'
+          verbose: ${{ github.event.inputs.verbose || 'false' }}
 
       - name: Report Results
         if: always()

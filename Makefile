@@ -53,8 +53,50 @@ install-tools: ## Install required development tools
 	@echo "✅ All tools installed successfully!"
 
 # Test example configurations with mocked GCP credentials
-test-examples:
-	@./scripts/test-terraform-examples.sh -v
+test-examples: ## Test all example configurations with mocked GCP credentials
+	@chmod +x ./scripts/test-terraform-examples.sh
+	@if [ -n "$(EXAMPLE)" ]; then \
+		echo "🧪 Testing specific example: $(EXAMPLE)"; \
+		MOCK_PROJECT_ID=$(MOCK_PROJECT_ID) MOCK_REGION=$(MOCK_REGION) MOCK_ZONE=$(MOCK_ZONE) \
+		./scripts/test-terraform-examples.sh -v -e "$(EXAMPLE)"; \
+	else \
+		echo "🧪 Testing all examples"; \
+		MOCK_PROJECT_ID=$(MOCK_PROJECT_ID) MOCK_REGION=$(MOCK_REGION) MOCK_ZONE=$(MOCK_ZONE) \
+		./scripts/test-terraform-examples.sh -v; \
+	fi
+
+test-example: ## Test a specific example with verbose output (requires EXAMPLE variable)
+	@if [ -z "$(EXAMPLE)" ]; then \
+		echo "❌ EXAMPLE variable is required. Use: make test-example EXAMPLE=your-example-name"; \
+		exit 1; \
+	fi
+	@echo "🧪 Testing example: $(EXAMPLE)"
+	@chmod +x ./scripts/test-terraform-examples.sh
+	@MOCK_PROJECT_ID=$(MOCK_PROJECT_ID) MOCK_REGION=$(MOCK_REGION) MOCK_ZONE=$(MOCK_ZONE) \
+	./scripts/test-terraform-examples.sh -v -e "$(EXAMPLE)"
+
+list-examples: ## List all available examples
+	@echo "📁 Available examples:"
+	@if [ -d "examples" ]; then \
+		for example in examples/*/; do \
+			if [ -d "$example" ]; then \
+				example_name=$(basename "$example"); \
+				echo "  📂 $example_name"; \
+			fi \
+		done \
+	else \
+		echo "❌ Examples directory not found"; \
+	fi
+
+clean-test-artifacts: ## Clean up any leftover test artifacts from examples
+	@echo "🧹 Cleaning test artifacts..."
+	@find examples -name "provider_override.tf" -delete 2>/dev/null || true
+	@find examples -name "mock-credentials.json" -delete 2>/dev/null || true
+	@find examples -name "terraform.tfvars" -delete 2>/dev/null || true
+	@find examples -name "plan.tfplan" -delete 2>/dev/null || true
+	@find examples -name ".terraform" -type d -exec rm -rf {} + 2>/dev/null || true
+	@find examples -name ".terraform.lock.hcl" -delete 2>/dev/null || true
+	@echo "✅ Test artifacts cleaned"
 
 # Validation
 validate: ## Validate Terraform configuration
