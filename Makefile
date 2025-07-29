@@ -4,7 +4,7 @@
 # Makefile for Vor Terraform GKE Module
 # Provides loca	@echo "🧹 Cleaning up..." development tools for linting, validation, and security scanning
 
-.PHONY: help install-tools validate lint security-trivy security-checkov security clean all
+.PHONY: help install-tools validate lint security-trivy security-checkov security clean all test-examples
 
 # Default target
 help: ## Show this help message
@@ -52,6 +52,10 @@ install-tools: ## Install required development tools
 	fi
 	@echo "✅ All tools installed successfully!"
 
+# Test example configurations with mocked GCP credentials
+test-examples:
+	@./scripts/test-terraform-examples.sh -v
+
 # Validation
 validate: ## Validate Terraform configuration
 	@echo "🔍 Validating Terraform configuration..."
@@ -60,7 +64,7 @@ validate: ## Validate Terraform configuration
 	@tofu init -backend=false
 	@tofu validate
 	@# Validate examples
-	@for example in docs/examples/*/; do \
+	@for example in examples/*/; do \
 		if [ -d "$$example" ]; then \
 			echo "📂 Validating example: $$example"; \
 			(cd "$$example" && tofu init -backend=false && tofu validate); \
@@ -143,11 +147,11 @@ clean: ## Clean up generated files and reports
 	@rm -rf reports/
 	@rm -f .tflint.hcl
 	@find . -name "plan.tfplan" -delete
-	@find . -name "terraform.tfvars" -path "*/docs/examples/*" -delete
+	@find . -name "terraform.tfvars" -path "*/examples/*" -delete
 	@echo "✅ Cleanup completed"
 
 # Complete workflow
-all: validate lint security ## Run all checks (validation, linting, security)
+all: validate lint security test-examples ## Run all checks (validation, linting, security, examples)
 	@echo ""
 	@echo "✅ All checks completed successfully!"
 	@echo ""
@@ -155,7 +159,12 @@ all: validate lint security ## Run all checks (validation, linting, security)
 	@echo "  ✅ Validation passed"
 	@echo "  ✅ Linting passed"
 	@echo "  ✅ Security scan completed"
+	@echo "  ✅ Example testing completed"
 	@echo ""
 	@if [ -d "reports" ]; then \
 		echo "📁 Security scan results available in reports/ directory"; \
 	fi
+
+# Example testing is also available locally via 'make test-examples'
+# This uses the same mock credentials approach as the GitHub Action
+# located at .github/actions/test-examples/

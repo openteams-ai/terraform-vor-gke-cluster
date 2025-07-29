@@ -16,8 +16,8 @@ A custom GitHub Action that tests Terraform example configurations with mocked G
 - name: Test Examples
   uses: ./.github/actions/test-examples
   with:
-    examples-path: 'docs/examples'
-    terraform-version: 'latest'
+    examples-path: 'examples'
+    terraform-version: '~1.5'
     mock-project-id: 'mock-project'
     mock-region: 'us-central1'
     mock-zone: 'us-central1-a'
@@ -27,7 +27,7 @@ A custom GitHub Action that tests Terraform example configurations with mocked G
 
 | Input               | Description                     | Required | Default         |
 | ------------------- | ------------------------------- | -------- | --------------- |
-| `examples-path`     | Path to the examples directory  | No       | `docs/examples` |
+| `examples-path`     | Path to the examples directory  | No       | `examples`      |
 | `terraform-version` | Terraform version to use        | No       | `latest`        |
 | `mock-project-id`   | Mock GCP project ID for testing | No       | `mock-project`  |
 | `mock-region`       | Mock GCP region for testing     | No       | `us-central1`   |
@@ -64,7 +64,7 @@ The action creates a mock GCP provider configuration that:
 ## Example Directory Structure
 
 ```
-docs/examples/
+examples/
 ├── basic/
 │   ├── main.tf
 │   ├── variables.tf

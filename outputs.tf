@@ -4,7 +4,7 @@
 output "kubeconfig" {
   description = "Kubeconfig for connecting to kubernetes cluster"
   sensitive   = true
-  value = templatefile("${path.module}/templates/kubeconfig.yaml", {
+  value = templatefile("${path.module}/templates/kubeconfig.yaml.tpl", {
     context                = google_container_cluster.main.name
     cluster_ca_certificate = google_container_cluster.main.master_auth[0].cluster_ca_certificate
     endpoint               = google_container_cluster.main.endpoint

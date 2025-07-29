@@ -1,0 +1,15 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+# Required variables
+project_id = "your-gcp-project-id"
+region     = "us-central1"
+location   = "us-central1-a"
+
+# Network configuration (update with your existing VPC details)
+network_self_link    = "projects/your-gcp-project-id/global/networks/your-vpc-name"
+subnetwork_self_link = "projects/your-gcp-project-id/regions/us-central1/subnetworks/your-subnet-name"
+
+# Optional variables
+cluster_name       = "vor-advanced-cluster"
+kubernetes_version = "1.28"
+availability_zones = ["us-central1-a", "us-central1-b", "us-central1-c"]

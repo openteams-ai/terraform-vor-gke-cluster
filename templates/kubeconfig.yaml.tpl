@@ -1,6 +1,9 @@
 # Copyright (c) 2025 Vor Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
+# Copyright (c) 2025 Vor Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
 apiVersion: v1
 kind: Config
 current-context: ${context}
@@ -17,4 +20,4 @@ clusters:
 users:
 - name: ${context}
   user:
-    token: ${token}
+    token: ${token != null ? token : "mock-token-for-planning"}
