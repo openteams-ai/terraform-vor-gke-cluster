@@ -55,7 +55,7 @@ jobs:
           terraform validate
 
           # Validate examples
-          for example in examples/*/; do
+          for example in docs/examples/*/; do
             if [ -d "$example" ]; then
               echo "🔍 Validating example: $example"
               cd "$example"
@@ -118,13 +118,13 @@ jobs:
         uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: config
-          format: table,json
-          output: trivy-results.json
+          format: table
+          output: trivy-results.txt
           exit-code: 0
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           vuln-type: os,library
-          skip-dirs: examples
+          skip-dirs: docs/examples
 
       - name: Run Checkov Security Scan
         id: checkov
@@ -142,15 +142,15 @@ jobs:
         with:
           name: security-scan-results
           path: |
-            trivy-results.json
-            checkov-results.json
+            trivy-results.txt
+            checkov-results.txt
           retention-days: 30
 
       - name: Test Examples
         run: |
           echo "🔍 Testing example configurations..."
 
-          for example in examples/*/; do
+          for example in docs/examples/*/; do
             if [ -d "$example" ]; then
               echo "🧪 Testing example: $example"
               cd "$example"
@@ -175,14 +175,16 @@ jobs:
           echo "# 🛡️ Security Scan Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [ -f "trivy-results.json" ]; then
-            TRIVY_ISSUES=$(jq '.Results[] | select(.Misconfigurations) | .Misconfigurations | length' trivy-results.json 2>/dev/null | awk '{sum+=$1} END {print sum+0}')
-            echo "**Trivy:** $TRIVY_ISSUES issues found" >> $GITHUB_STEP_SUMMARY
+          if [ -f "trivy-results.txt" ]; then
+            # Count HIGH and CRITICAL issues from Trivy table output
+            TRIVY_ISSUES=$(grep -E "(HIGH|CRITICAL)" trivy-results.txt | wc -l 2>/dev/null || echo "0")
+            echo "**Trivy:** $TRIVY_ISSUES HIGH/CRITICAL issues found" >> $GITHUB_STEP_SUMMARY
           fi
 
-          if [ -f "checkov-results.json" ]; then
-            CHECKOV_FAILED=$(jq '.summary.failed' checkov-results.json 2>/dev/null || echo "0")
-            CHECKOV_PASSED=$(jq '.summary.passed' checkov-results.json 2>/dev/null || echo "0")
+          if [ -f "checkov-results.txt" ]; then
+            # Parse Checkov text output for failed/passed counts
+            CHECKOV_FAILED=$(grep -o "Check: [A-Z_0-9]*.*FAILED" checkov-results.txt | wc -l 2>/dev/null || echo "0")
+            CHECKOV_PASSED=$(grep -o "Check: [A-Z_0-9]*.*PASSED" checkov-results.txt | wc -l 2>/dev/null || echo "0")
             echo "**Checkov:** $CHECKOV_FAILED failed, $CHECKOV_PASSED passed" >> $GITHUB_STEP_SUMMARY
           fi
 
