@@ -2,8 +2,7 @@ version: ">= 0.16"
 
 formatter: markdown
 
-header-from: docs/README-header.md
-footer-from: docs/README-footer.md
+header-from: docs/components/nodes-header.md
 
 sections:
   show:
@@ -14,10 +13,20 @@ sections:
     - resources
     - inputs
     - outputs
-    - footer
 
 content: |-
-  {{ .Header }}
+  ## Technical Reference - Nodes Component
+
+  > This is the auto-generated technical reference for the nodes component.
+  > For architectural guidance and security explanations, see the [nodes configuration guide](nodes-header.md).
+
+  ## Resources
+
+  This component manages the following resources:
+
+  {{ range .Module.Resources }}
+  - {{ .GetMode }}.{{ .Spec }} ({{ .Position.Filename }}#{{ .Position.Line }})
+  {{- end }}
 
   {{ .Requirements }}
   {{ .Providers }}
@@ -26,15 +35,9 @@ content: |-
   {{ .Inputs }}
   {{ .Outputs }}
 
-  {{ .Footer }}
-
 output:
-  file: README.md
-  mode: inject
-  template: |-
-    <!-- BEGINNING OF PRE-COMMIT-TERRAFORM-DOCS HOOK -->
-    {{ .Content }}
-    <!-- END OF PRE-COMMIT-TERRAFORM-DOCS HOOK -->
+  file: docs/components/nodes.md
+  mode: replace
 
 settings:
   anchor: true
