@@ -15,7 +15,7 @@ resource "google_project_service" "container" {
 
 # Custom VPC for enhanced security isolation
 resource "google_compute_network" "main" {
-  #checkov:skip=CKV2_GCP_18:Firewall rules already configured
+  # checkov:skip=CKV2_GCP_18:Firewall rules already configured
   count                   = var.create_vpc ? 1 : 0
   name                    = "${var.name}-vpc"
   description             = "Custom VPC for ${var.name} GKE cluster, managed by Terraform"
