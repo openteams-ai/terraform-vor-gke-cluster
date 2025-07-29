@@ -15,6 +15,7 @@ make all
 make validate      # Validate Terraform configuration
 make lint         # Run TFLint checks
 make security     # Run Trivy and Checkov security scans
+make docs         # Generate documentation with terraform-docs
 make test-examples # Test examples with mocked credentials
 
 # Clean up
@@ -40,12 +41,17 @@ make test-examples # Test examples (optional)
 
 **Before Committing:**
 ```bash
-make all          # Run all checks (validation, linting, security, examples)
+make all          # Run all checks (validation, linting, security, docs, examples)
 ```
 
 **Security Scanning:**
 ```bash
 make security  # Run Trivy and Checkov security scans
+```
+
+**Documentation Generation:**
+```bash
+make docs         # Generate documentation with terraform-docs
 ```
 
 **Example Testing:**

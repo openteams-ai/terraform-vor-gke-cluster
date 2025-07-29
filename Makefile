@@ -4,7 +4,7 @@
 # Makefile for Vor Terraform GKE Module
 # Provides loca	@echo "🧹 Cleaning up..." development tools for linting, validation, and security scanning
 
-.PHONY: help install-tools validate lint security-trivy security-checkov security clean all test-examples
+.PHONY: help install-tools validate lint security-trivy security-checkov security clean all test-examples docs
 
 # Default target
 help: ## Show this help message
@@ -50,7 +50,43 @@ install-tools: ## Install required development tools
 	else \
 		echo "✅ Checkov already installed: $$(checkov --version)"; \
 	fi
+	@# Install terraform-docs
+	@if ! command -v terraform-docs >/dev/null 2>&1; then \
+		echo "📦 Installing terraform-docs..."; \
+		if [ "$$(uname)" = "Darwin" ]; then \
+			brew install terraform-docs; \
+		else \
+			curl -sSLo ./terraform-docs.tar.gz https://terraform-docs.io/dl/v0.17.0/terraform-docs-v0.17.0-$$(uname | tr '[:upper:]' '[:lower:]')-amd64.tar.gz; \
+			tar -xzf terraform-docs.tar.gz; \
+			chmod +x terraform-docs; \
+			sudo mv terraform-docs /usr/local/bin/; \
+			rm terraform-docs.tar.gz; \
+		fi; \
+	else \
+		echo "✅ terraform-docs already installed: $$(terraform-docs --version)"; \
+	fi
 	@echo "✅ All tools installed successfully!"
+
+# Documentation generation
+docs: ## Generate documentation using terraform-docs
+	@echo "📚 Generating documentation with terraform-docs..."
+	@# Generate main README
+	@echo "📝 Generating main README.md..."
+	@terraform-docs --config .terraform-docs/main.yml .
+	@# Generate component documentation
+	@echo "📝 Generating component documentation..."
+	@for component in cluster network nodes policies; do \
+		echo "  📄 Generating $$component documentation..."; \
+		terraform-docs --config .terraform-docs/$$component.yml --output-file docs/components/$$component.md .; \
+	done
+	@echo "✅ Documentation generation completed"
+	@echo ""
+	@echo "Generated files:"
+	@echo "  📄 README.md (main module documentation)"
+	@echo "  📄 docs/components/cluster.md"
+	@echo "  📄 docs/components/network.md"
+	@echo "  📄 docs/components/nodes.md"
+	@echo "  📄 docs/components/policies.md"
 
 # Test example configurations with mocked GCP credentials
 test-examples: ## Test all example configurations with mocked GCP credentials
@@ -184,16 +220,18 @@ security: security-trivy security-checkov ## Run all security scans
 
 # Cleanup
 clean: ## Clean up generated files and reports
-	@echo "� Cleaning up..."
+	@echo "🧹 Cleaning up..."
 	@rm -rf .terraform*
 	@rm -rf reports/
 	@rm -f .tflint.hcl
 	@find . -name "plan.tfplan" -delete
 	@find . -name "terraform.tfvars" -path "*/examples/*" -delete
+	@# Note: Generated docs (docs/components/*.md) are kept to avoid broken links
+	@# Use 'git checkout docs/components/' to reset generated docs if needed
 	@echo "✅ Cleanup completed"
 
 # Complete workflow
-all: validate lint security test-examples ## Run all checks (validation, linting, security, examples)
+all: validate lint security docs test-examples ## Run all checks (validation, linting, security, docs, examples)
 	@echo ""
 	@echo "✅ All checks completed successfully!"
 	@echo ""
@@ -201,6 +239,7 @@ all: validate lint security test-examples ## Run all checks (validation, linting
 	@echo "  ✅ Validation passed"
 	@echo "  ✅ Linting passed"
 	@echo "  ✅ Security scan completed"
+	@echo "  ✅ Documentation generated"
 	@echo "  ✅ Example testing completed"
 	@echo ""
 	@if [ -d "reports" ]; then \
