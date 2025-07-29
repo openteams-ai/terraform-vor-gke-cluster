@@ -30,7 +30,6 @@ jobs:
       - name: Discover example directories
         id: set-matrix
         run: |
-          EXAMPLES_PATH="docs/examples"
           echo "🔍 Discovering examples in $EXAMPLES_PATH..."
 
           # Find all directories under examples path
@@ -61,6 +60,8 @@ jobs:
 
           echo "📊 Generated matrix for ${#examples[@]} examples: ${examples[*]}"
           echo "🔧 Matrix JSON: $matrix_json"
+        env:
+          EXAMPLES_PATH: ${{ github.event.inputs.examples-path || 'examples' }}
 
   # Second job: Test each example in parallel using matrix strategy
   test-examples:
