@@ -148,15 +148,9 @@ jobs:
           echo "🔍 Running Checkov security scan..."
           checkov -d . \
             --framework terraform \
-            --output json \
+            -- compact \
             --output-file checkov-results.json \
             --soft-fail
-
-          # Also output human-readable format
-          checkov -d . \
-            --framework terraform \
-            --compact \
-            --quiet
           echo "✅ Checkov security scan completed"
 
       - name: Upload Security Scan Results
