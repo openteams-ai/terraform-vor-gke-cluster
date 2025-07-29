@@ -53,6 +53,15 @@ resource "google_container_cluster" "main" {
     }
   }
 
+  # checkov:skip=CKV_GCP_65: Support for RBAC authenticator groups
+  # https://cloud.google.com/kubernetes-engine/docs/how-to/google-groups-rbac
+  dynamic "authenticator_groups_config" {
+    for_each = var.rbac_security_group != "" ? [1] : []
+    content {
+      security_group = var.rbac_security_group
+    }
+  }
+
   # Network configuration : Newly created clusters will default to VPC_NATIVE
   network    = local.network_self_link
   subnetwork = local.subnetwork_self_link

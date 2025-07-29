@@ -120,6 +120,7 @@ variable "node_groups" {
       name               = string
       count              = number
       gpu_partition_size = optional(string, "")
+      gpu_driver_version = optional(string, "")
     })), [])
     labels = optional(map(string), {})
   }))
@@ -209,6 +210,12 @@ variable "maintenance_start_time" {
   description = "Start time for daily maintenance window (HH:MM format)"
   type        = string
   default     = "02:00"
+}
+
+variable "rbac_security_group" {
+  description = "Security group for RBAC authenticator"
+  type        = string
+  default     = ""
 }
 
 # ==============================================================================
