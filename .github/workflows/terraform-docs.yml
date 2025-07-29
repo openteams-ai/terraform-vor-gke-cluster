@@ -1,0 +1,154 @@
+# Copyright (c) 2025 Vor Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: "Generate Terraform Documentation"
+
+on:
+  push:
+    branches: [ "main"]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  terraform-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.head_ref }}
+
+      - name: Create docs directory structure
+        run: |
+          mkdir -p docs/components
+
+      - name: Generate main README documentation
+        uses: terraform-docs/gh-actions@v1.4.1
+        with:
+          working-dir: .
+          config-file: .terraform-docs/main.yml
+          output-file: README.md
+          output-method: inject
+          git-push: "true"
+
+      - name: Generate component documentation
+        run: |
+          echo "📚 Generating component documentation..."
+
+          # Create header files if they don't exist
+          declare -A components=(
+            ["cluster"]="GKE cluster configuration and security settings"
+            ["network"]="VPC, subnets, and networking components"
+            ["nodes"]="Node pools and compute configuration"
+            ["policies"]="Security policies and constraints"
+          )
+
+          for component in "${!components[@]}"; do
+            if [ ! -f "docs/components/${component}-header.md" ]; then
+              cat > docs/components/${component}-header.md << EOF
+          # ${component^} Component
+
+          ${components[$component]}
+
+          This document provides detailed information about the ${component} component of the Vor Terraform GKE module.
+          EOF
+            fi
+          done
+
+      - name: Generate cluster component docs
+        uses: terraform-docs/gh-actions@v1.4.1
+        with:
+          working-dir: .
+          config-file: .terraform-docs/cluster.yml
+          output-file: docs/components/cluster.md
+          output-method: replace
+
+      - name: Generate network component docs
+        uses: terraform-docs/gh-actions@v1.4.1
+        with:
+          working-dir: .
+          config-file: .terraform-docs/network.yml
+          output-file: docs/components/network.md
+          output-method: replace
+
+      - name: Generate nodes component docs
+        uses: terraform-docs/gh-actions@v1.4.1
+        with:
+          working-dir: .
+          config-file: .terraform-docs/nodes.yml
+          output-file: docs/components/nodes.md
+          output-method: replace
+
+      - name: Generate policies component docs
+        uses: terraform-docs/gh-actions@v1.4.1
+        with:
+          working-dir: .
+          config-file: .terraform-docs/policies.yml
+          output-file: docs/components/policies.md
+          output-method: replace
+
+
+
+      - name: Create documentation index
+        run: |
+          echo "📚 Creating documentation index..."
+
+          cat > docs/README.md << 'EOF'
+          # Vor Terraform GKE Module Documentation
+
+          This directory contains detailed documentation for the Vor Terraform GKE module.
+
+          ## Component Documentation
+
+          Each component of the module has its own detailed documentation:
+
+          EOF
+
+          # Add component docs to index
+          for component_doc in docs/components/*.md; do
+            if [ -f "$component_doc" ]; then
+              component_name=$(basename "$component_doc" .md | sed 's/-header//')
+              if [ "$component_name" != "*" ] && [[ ! "$component_name" =~ -header$ ]]; then
+                echo "- [${component_name^} Component](components/${component_name}.md)" >> docs/README.md
+              fi
+            fi
+          done
+
+          cat >> docs/README.md << 'EOF'
+
+          ## Additional Resources
+
+          - [Main README](../README.md) - Quick start and overview
+          - [Labeling Conventions](../.labeling-conventions.md) - Resource labeling strategy
+          - [Copyright Information](../COPYRIGHT.md) - Copyright and licensing details
+          EOF
+
+      - name: Check for changes
+        id: verify-changed-files
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          git config --local user.email "vor-docs[bot]@users.noreply.github.com"
+          git config --local user.name "vor-docs[bot]"
+          git add .
+          git commit -m "docs: auto-update terraform documentation
+
+          - Updated component documentation
+          - Updated main README with terraform-docs
+          - Updated documentation index
+
+          [skip ci]"
+          git push
