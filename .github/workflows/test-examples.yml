@@ -82,7 +82,7 @@ jobs:
         id: test-example
         uses: ./.github/actions/test-examples
         with:
-          example-path: 'docs/examples/${{ matrix.example }}'
+          example-path: 'examples/${{ matrix.example }}'
           terraform-version: ${{ github.event.inputs.terraform-version || 'latest' }}
           mock-project-id: 'mock-project-${{ matrix.example }}'
           mock-region: 'us-central1'
@@ -102,47 +102,4 @@ jobs:
             echo "📊 Init success: ${{ steps.test-example.outputs.init-success }}"
             echo "📊 Plan success: ${{ steps.test-example.outputs.plan-success }}"
             exit 1
-          fi
-
-  # Third job: Collect results and provide summary
-  test-summary:
-    runs-on: ubuntu-latest
-    needs: [discover-examples, test-examples]
-    if: always() && needs.discover-examples.outputs.examples-count > 0
-    steps:
-      - name: Generate Test Summary
-        run: |
-          echo "# 🧪 Terraform Examples Test Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          TOTAL_EXAMPLES="${{ needs.discover-examples.outputs.examples-count }}"
-
-          if [ "${{ needs.test-examples.result }}" == "success" ]; then
-            echo "✅ **All $TOTAL_EXAMPLES examples passed validation!**" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "🎉 Every Terraform example configuration is valid and can be planned successfully." >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ needs.test-examples.result }}" == "failure" ]; then
-            echo "❌ **Some examples failed validation**" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Please check the individual job results above to see which examples failed." >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Total Examples:** $TOTAL_EXAMPLES" >> $GITHUB_STEP_SUMMARY
-            echo "**Status:** Some failed - see individual results" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ **Test execution had issues**" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Some tests may have been cancelled or encountered unexpected errors." >> $GITHUB_STEP_SUMMARY
-          fi
-
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "*Tests run in parallel using matrix strategy for faster feedback*" >> $GITHUB_STEP_SUMMARY
-
-      - name: Final Status Check
-        run: |
-          if [ "${{ needs.test-examples.result }}" != "success" ]; then
-            echo "❌ One or more examples failed validation"
-            exit 1
-          else
-            echo "✅ All examples passed validation successfully!"
           fi

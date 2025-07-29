@@ -2,8 +2,8 @@ name: 'Test Terraform Examples'
 description: 'Tests Terraform example configurations with mocked GCP credentials'
 
 inputs:
-  examples-path:
-    description: 'Path to the examples directory'
+  example-path:
+    description: 'Path to the example directory containing Terraform configurations'
     required: false
     default: 'examples'
   terraform-version:
