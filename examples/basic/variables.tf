@@ -25,5 +25,5 @@ variable "project_id" {
 variable "kubernetes_version" {
   description = "Kubernetes version for the cluster"
   type        = string
-  default     = "1.28"
+  default     = "1.33"
 }

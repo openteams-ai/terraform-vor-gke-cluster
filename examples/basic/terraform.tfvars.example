@@ -7,4 +7,4 @@ location   = "us-central1-a"
 
 # Optional variables
 cluster_name       = "vor-basic-cluster"
-kubernetes_version = "1.28"
+kubernetes_version = "1.33"

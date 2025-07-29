@@ -11,5 +11,5 @@ subnetwork_self_link = "projects/your-gcp-project-id/regions/us-central1/subnetw
 
 # Optional variables
 cluster_name       = "vor-advanced-cluster"
-kubernetes_version = "1.28"
+kubernetes_version = "1.33"
 availability_zones = ["us-central1-a", "us-central1-b", "us-central1-c"]
