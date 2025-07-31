@@ -206,6 +206,12 @@ variable "release_channel" {
   default     = "STABLE"
 }
 
+variable "gateway_api_channel" {
+  description = "GKE Gateway API config channel"
+  type        = string
+  default     = "CHANNEL_DISABLED"
+}
+
 variable "maintenance_start_time" {
   description = "Start time for daily maintenance window (HH:MM format)"
   type        = string
