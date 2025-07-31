@@ -69,13 +69,13 @@ output "cluster_security_features" {
 }
 
 output "client_certificate" {
-  description = "Base64 decoded public certificate used by clients (PEM format)"
+  description = "public certificate used by clients (PEM format)"
   sensitive   = true
-  value       = base64decode(google_container_cluster.main.master_auth[0].client_certificate)
+  value       = google_container_cluster.main.master_auth[0].client_certificate
 }
 
 output "client_key" {
-  description = "Base64 decoded private key used by clients (PEM format)"
+  description = "private key used by clients (PEM format)"
   sensitive   = true
-  value       = base64decode(google_container_cluster.main.master_auth[0].client_key)
+  value       = google_container_cluster.main.master_auth[0].client_key
 }
