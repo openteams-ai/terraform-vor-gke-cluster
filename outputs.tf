@@ -61,3 +61,15 @@ output "cluster_security_features" {
     vpc_native           = true
   }
 }
+
+output "client_certificate" {
+  description = "Base64 encoded public certificate used by clients to authenticate to the cluster endpoint"
+  sensitive   = true
+  value       = google_container_cluster.main.master_auth[0].client_certificate
+}
+
+output "client_key" {
+  description = "Base64 encoded private key used by clients to authenticate to the cluster endpoint"
+  sensitive   = true
+  value       = google_container_cluster.main.master_auth[0].client_key
+}
