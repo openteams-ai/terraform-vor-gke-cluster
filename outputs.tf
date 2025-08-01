@@ -23,12 +23,6 @@ output "cluster_endpoint" {
 }
 
 output "cluster_ca_certificate" {
-  description = "Base64 decoded cluster CA certificate (PEM format)"
-  sensitive   = true
-  value       = google_container_cluster.main.master_auth[0].cluster_ca_certificate
-}
-
-output "cluster_ca_certificate_base64" {
   description = "Base64 encoded cluster CA certificate"
   sensitive   = true
   value       = google_container_cluster.main.master_auth[0].cluster_ca_certificate
