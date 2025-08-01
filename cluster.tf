@@ -96,13 +96,6 @@ resource "google_container_cluster" "main" {
     }
   }
 
-  check "authorized_networks_configured" {
-    assert {
-      condition     = length(var.authorized_networks) > 0
-      error_message = "WARNING: No authorized networks configured. Cluster master will be inaccessible. Add your IP to authorized_networks."
-    }
-  }
-
   release_channel {
     channel = var.release_channel
   }
@@ -185,4 +178,11 @@ resource "google_container_cluster" "main" {
     google_project_service.container,
     google_project_service.compute
   ]
+}
+
+check "authorized_networks_configured" {
+  assert {
+    condition     = length(var.authorized_networks) > 0
+    error_message = "WARNING: No authorized networks configured. Cluster master will be inaccessible. Add your IP to authorized_networks."
+  }
 }
