@@ -25,7 +25,7 @@ output "cluster_endpoint" {
 output "cluster_ca_certificate" {
   description = "Base64 decoded cluster CA certificate (PEM format)"
   sensitive   = true
-  value       = base64decode(google_container_cluster.main.master_auth[0].cluster_ca_certificate)
+  value       = google_container_cluster.main.master_auth[0].cluster_ca_certificate
 }
 
 output "cluster_ca_certificate_base64" {
@@ -66,16 +66,4 @@ output "cluster_security_features" {
     database_encryption  = var.database_encryption_key_name != ""
     vpc_native           = true
   }
-}
-
-output "client_certificate" {
-  description = "public certificate used by clients (PEM format)"
-  sensitive   = true
-  value       = google_container_cluster.main.master_auth[0].client_certificate
-}
-
-output "client_key" {
-  description = "private key used by clients (PEM format)"
-  sensitive   = true
-  value       = google_container_cluster.main.master_auth[0].client_key
 }
