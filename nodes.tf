@@ -61,7 +61,7 @@ resource "google_container_node_pool" "main" {
     metadata = {
       disable-legacy-endpoints         = "true" # trivy:ignore:AVD-GCP-0052 Legacy endpoints already disabled
       google-compute-enable-virtio-rng = "true"
-      # enable-oslogin                   = "true"
+      enable-oslogin                   = "true"
     }
 
     # Node labels
