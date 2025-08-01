@@ -100,6 +100,10 @@ resource "google_container_cluster" "main" {
     channel = var.release_channel
   }
 
+  gateway_api_config {
+    channel = var.gateway_api_channel
+  }
+
   workload_identity_config {
     workload_pool = "${var.project_id}.svc.id.goog"
   }
