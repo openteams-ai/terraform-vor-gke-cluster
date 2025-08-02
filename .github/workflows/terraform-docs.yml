@@ -132,7 +132,16 @@ jobs:
         run: |
           echo "🔍 Checking for documentation changes..."
           git status --porcelain
-          if git diff --quiet HEAD; then  # Compare with HEAD instead of index
+
+          # Debug: Check file permissions for changed files
+          echo "🐛 File permissions for changed files:"
+          git status --porcelain | while read status file; do
+            if [ -f "$file" ]; then
+              ls -la "$file"
+            fi
+          done
+
+          if git diff --quiet HEAD; then
             echo "📝 No changes detected"
             echo "changed=false" >> $GITHUB_OUTPUT
           else
