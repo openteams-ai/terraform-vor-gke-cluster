@@ -315,23 +315,13 @@ graph TD
   FlowLogs --> Monitoring
 ```
 
-## ⚡ Quick Reference
+## 🚀 Getting Started
 
-| Variable             | Type     | Description                                      |
-| -------------------- | -------- | ------------------------------------------------ |
-| `name`               | `string` | Name of the GKE cluster and associated resources |
-| `location`           | `string` | GCP zone where the cluster will be created       |
-| `region`             | `string` | GCP region for regional resources                |
-| `project_id`         | `string` | GCP project ID where resources will be created   |
-| `kubernetes_version` | `string` | Kubernetes version for the cluster               |
+1. **Review the Examples**: Start with the [basic example](examples/basic/) for a simple setup or the [advanced example](examples/advanced/) for a production-ready configuration
+2. **Configure Variables**: See the complete inputs documentation below for all configuration options
+3. **Deploy**: Run `terraform init`, `terraform plan`, and `terraform apply`
 
-**📖 [Complete Variable Reference](docs/components/)** - Detailed documentation for all variables and configuration options
-
-## 🏷️ Resource Labeling
-
-All infrastructure resources are automatically labeled for tracking, cost allocation, and management. You can add custom labels that will be merged with the standard ones.
-
-**📖 [Complete Labeling Guide](.labeling-conventions.md)** - Detailed labeling conventions and best practices
+For detailed configuration guides, see the component documentation linked above.
 
 ## Requirements
 
@@ -412,10 +402,6 @@ No modules.
 | <a name="output_service_account_email"></a> [service\_account\_email](#output\_service\_account\_email) | Email of the service account used by node pools |
 | <a name="output_subnet_id"></a> [subnet\_id](#output\_subnet\_id) | ID of the subnet |
 | <a name="output_vpc_id"></a> [vpc\_id](#output\_vpc\_id) | ID of the VPC network |
-
-## Contributing
-
-Please read the contribution guidelines before submitting changes. All source code files must include appropriate copyright headers as defined in the `.copywrite.hcl` configuration.
 
 ## License
 
