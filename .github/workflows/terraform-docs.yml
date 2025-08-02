@@ -131,12 +131,12 @@ jobs:
         run: |
           echo "🔍 Checking for documentation changes..."
           git status --porcelain
-          if git diff --quiet; then
+          if git diff --quiet HEAD; then  # Compare with HEAD instead of index
             echo "📝 No changes detected"
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "📝 Changes detected:"
-            git diff --name-only
+            git diff --name-only HEAD
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
