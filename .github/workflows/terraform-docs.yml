@@ -14,6 +14,7 @@ jobs:
       contents: write
       pull-requests: write
 
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -131,33 +132,44 @@ jobs:
         run: |
           echo "🔍 Checking for documentation changes..."
           git status --porcelain
-          if git diff --quiet; then
+
+          # Debug: Check file permissions for changed files
+          echo "🐛 File permissions for changed files:"
+          git status --porcelain | while read status file; do
+            if [ -f "$file" ]; then
+              ls -la "$file"
+            fi
+          done
+
+          if git diff --quiet HEAD; then
             echo "📝 No changes detected"
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "📝 Changes detected:"
-            git diff --name-only
+            git diff --name-only HEAD
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
+      # https://github.com/terraform-docs/gh-actions/issues/90
+      - name: Fix .git owner
+        run: sudo chown runner:docker -R .git
+
       - name: Commit and push changes
         if: steps.verify-changed-files.outputs.changed == 'true'
+        env:
+          GITHUB_AUTHOR: github-actions[bot]
+          COMMIT_MSG: "[skip ci] docs: auto-update terraform documentation"
         run: |
           echo "📝 Configuring git..."
-          git config --local user.email "vor-docs[bot]@users.noreply.github.com"
-          git config --local user.name "vor-docs[bot]"
+          sudo chown -R runner:docker .git/objects
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "${{ env.GITHUB_AUTHOR }}"
 
           echo "📝 Adding changed files..."
           git add docs/ README.md
 
           echo "📝 Committing changes..."
-          git commit -m "docs: auto-update terraform documentation
-
-          - Updated component documentation
-          - Updated main README with terraform-docs
-          - Updated documentation index
-
-          [skip ci]"
+          git commit -m "${{ env.COMMIT_MSG }}"
 
           echo "📝 Pushing changes..."
-          git push
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}
