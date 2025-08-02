@@ -141,12 +141,13 @@ jobs:
             fi
           done
 
-          if git diff --quiet HEAD; then
-            echo "📝 No changes detected"
+          # Check for changes in README.md and docs/ directory
+          if git diff --quiet HEAD -- README.md docs/; then
+            echo "📝 No documentation changes detected"
             echo "changed=false" >> $GITHUB_OUTPUT
           else
-            echo "📝 Changes detected:"
-            git diff --name-only HEAD
+            echo "📝 Documentation changes detected:"
+            git diff --name-only HEAD -- README.md docs/
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
