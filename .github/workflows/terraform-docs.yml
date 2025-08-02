@@ -21,7 +21,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-          persist-credentials: true
 
       - name: Create docs directory structure
         run: |
@@ -146,8 +145,10 @@ jobs:
         if: steps.verify-changed-files.outputs.changed == 'true'
         run: |
           echo "📝 Configuring git..."
-          git config --local user.email "vor-docs[bot]@users.noreply.github.com"
-          git config --local user.name "vor-docs[bot]"
+          # Use GitHub Actions bot identity to avoid issues with commit authorship over
+          # .git/objects DB
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
 
           echo "📝 Adding changed files..."
           git add docs/ README.md
