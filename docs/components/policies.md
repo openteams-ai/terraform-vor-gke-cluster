@@ -34,7 +34,7 @@ This component manages the following resources:
 
 | Name | Version |
 |------|---------|
-| <a name="provider_google"></a> [google](#provider\_google) | ~> 5.0 |
+| <a name="provider_google"></a> [google](#provider\_google) | 5.45.2 |
 ## Modules
 
 No modules.
