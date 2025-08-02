@@ -150,12 +150,14 @@ jobs:
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
+      # https://github.com/terraform-docs/gh-actions/issues/90
+      - name: Fix .git owner
+        run: sudo chown runner:docker -R .git
+
       - name: Commit and push changes
         if: steps.verify-changed-files.outputs.changed == 'true'
         run: |
           echo "📝 Configuring git..."
-          # Use GitHub Actions bot identity to avoid issues with commit authorship over
-          # .git/objects DB
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
