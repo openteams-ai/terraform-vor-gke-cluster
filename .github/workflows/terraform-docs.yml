@@ -163,13 +163,13 @@ jobs:
           echo "📝 Configuring git..."
           sudo chown -R runner:docker .git/objects
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config --local user.name ${{ env.GITHUB_AUTHOR }}
+          git config --local user.name "${{ env.GITHUB_AUTHOR }}"
 
           echo "📝 Adding changed files..."
           git add docs/ README.md
 
           echo "📝 Committing changes..."
-          git commit -m ${{ env.COMMIT_MSG }}
+          git commit -m "${{ env.COMMIT_MSG }}"
 
           echo "📝 Pushing changes..."
           git push origin HEAD:${{ github.head_ref || github.ref_name }}
