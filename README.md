@@ -186,6 +186,7 @@ No modules.
 
 | Name | Description |
 |------|-------------|
+| <a name="output_cluster_access_token"></a> [cluster\_access\_token](#output\_cluster\_access\_token) | Access token for the GKE cluster |
 | <a name="output_cluster_ca_certificate"></a> [cluster\_ca\_certificate](#output\_cluster\_ca\_certificate) | Base64 encoded cluster CA certificate |
 | <a name="output_cluster_endpoint"></a> [cluster\_endpoint](#output\_cluster\_endpoint) | Endpoint for the GKE cluster |
 | <a name="output_cluster_name"></a> [cluster\_name](#output\_cluster\_name) | Name of the GKE cluster |
