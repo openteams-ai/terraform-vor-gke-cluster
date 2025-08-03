@@ -55,6 +55,13 @@ resource "google_container_cluster" "main" {
     }
   }
 
+  # https://cloud.google.com/kubernetes-engine/docs/how-to/disable-kubelet-readonly-port
+  node_pool_auto_config {
+    node_kubelet_config {
+      insecure_kubelet_readonly_port_enabled = "FALSE"
+    }
+  }
+
   # checkov:skip=CKV_GCP_65: Support for RBAC authenticator groups
   # https://cloud.google.com/kubernetes-engine/docs/how-to/google-groups-rbac
   dynamic "authenticator_groups_config" {
