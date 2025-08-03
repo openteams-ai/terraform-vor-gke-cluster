@@ -3,8 +3,6 @@ name: "Generate Terraform Documentation"
 on:
   push:
     branches: [ "main"]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -14,83 +12,22 @@ jobs:
       contents: write
       pull-requests: write
 
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
+          ref: ${{ github.head_ref }}
 
-      - name: Create docs directory structure
+      - name: Install terraform-docs and tofu
         run: |
-          mkdir -p docs/components
+          make install-tools
 
-      - name: Generate main README documentation
-        uses: terraform-docs/gh-actions@v1.4.1
-        with:
-          working-dir: .
-          config-file: .terraform-docs/main.yml
-          output-file: README.md
-          output-method: inject
-          git-push: "false"
-
-      - name: Generate component documentation
+      - name: Update/Generate Terraform documentation
         run: |
-          echo "📚 Generating component documentation..."
-
-          # Create header files if they don't exist
-          declare -A components=(
-            ["cluster"]="GKE cluster configuration and security settings"
-            ["network"]="VPC, subnets, and networking components"
-            ["nodes"]="Node pools and compute configuration"
-            ["policies"]="Security policies and constraints"
-          )
-
-          for component in "${!components[@]}"; do
-            if [ ! -f "docs/components/${component}-header.md" ]; then
-              cat > docs/components/${component}-header.md << EOF
-          # ${component^} Component
-
-          ${components[$component]}
-
-          This document provides detailed information about the ${component} component of the Vor Terraform GKE module.
-          EOF
-            fi
-          done
-
-      - name: Generate cluster component docs
-        uses: terraform-docs/gh-actions@v1.4.1
-        with:
-          working-dir: .
-          config-file: .terraform-docs/cluster.yml
-          output-file: docs/components/cluster.md
-          output-method: replace
-
-      - name: Generate network component docs
-        uses: terraform-docs/gh-actions@v1.4.1
-        with:
-          working-dir: .
-          config-file: .terraform-docs/network.yml
-          output-file: docs/components/network.md
-          output-method: replace
-
-      - name: Generate nodes component docs
-        uses: terraform-docs/gh-actions@v1.4.1
-        with:
-          working-dir: .
-          config-file: .terraform-docs/nodes.yml
-          output-file: docs/components/nodes.md
-          output-method: replace
-
-      - name: Generate policies component docs
-        uses: terraform-docs/gh-actions@v1.4.1
-        with:
-          working-dir: .
-          config-file: .terraform-docs/policies.yml
-          output-file: docs/components/policies.md
-          output-method: replace
-
-
+          echo "📚 Generating Terraform documentation..."
+          make docs
 
       - name: Create documentation index
         run: |
@@ -126,38 +63,57 @@ jobs:
           - [Copyright Information](../COPYRIGHT.md) - Copyright and licensing details
           EOF
 
+
+      # https://github.com/terraform-docs/gh-actions/issues/90
+      - name: Fix .git owner
+        run: |
+          chown runner:docker -R .git
+
       - name: Check for changes
         id: verify-changed-files
         run: |
           echo "🔍 Checking for documentation changes..."
           git status --porcelain
-          if git diff --quiet; then
-            echo "📝 No changes detected"
+
+          # Debug: Check file permissions for changed files
+          echo "🐛 File permissions for changed files:"
+          git status --porcelain | while read status file; do
+            if [ -f "$file" ]; then
+              ls -la "$file"
+            fi
+          done
+
+          # Check for changes in README.md and docs/ directory
+          if git diff --quiet HEAD -- README.md docs/; then
+            echo "📝 No documentation changes detected"
             echo "changed=false" >> $GITHUB_OUTPUT
           else
-            echo "📝 Changes detected:"
-            git diff --name-only
+            echo "📝 Documentation changes detected:"
+            git diff --name-only HEAD -- README.md docs/
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Commit and push changes
         if: steps.verify-changed-files.outputs.changed == 'true'
+        env:
+          GITHUB_AUTHOR: github-actions[bot]
+          COMMIT_MSG: "[skip ci] docs: auto-update terraform documentation"
         run: |
-          echo "📝 Configuring git..."
-          git config --local user.email "vor-docs[bot]@users.noreply.github.com"
-          git config --local user.name "vor-docs[bot]"
+          sudo chown -R runner:docker .git/objects
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "${{ env.GITHUB_AUTHOR }}"
 
-          echo "📝 Adding changed files..."
           git add docs/ README.md
 
           echo "📝 Committing changes..."
-          git commit -m "docs: auto-update terraform documentation
+          git commit -m "${{ env.COMMIT_MSG }}"
 
-          - Updated component documentation
-          - Updated main README with terraform-docs
-          - Updated documentation index
+          echo "📝 Determining target branch..."
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            TARGET_BRANCH="${{ github.head_ref }}"
+          else
+            TARGET_BRANCH="${{ github.ref_name }}"
+          fi
 
-          [skip ci]"
-
-          echo "📝 Pushing changes..."
-          git push
+          echo "📝 Pushing to branch: $TARGET_BRANCH"
+          git push origin HEAD:$TARGET_BRANCH
