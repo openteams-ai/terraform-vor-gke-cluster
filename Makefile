@@ -46,7 +46,7 @@ docs: ## Generate documentation using terraform-docs
 	@echo "📚 Generating documentation with terraform-docs..."
 	@# Generate main README
 	@echo "📝 Generating main README.md..."
-	@terraform-docs --config .terraform-docs/main.yml .
+	@terraform-docs --config .terraform-docs/main.yml --output-file README.md . || { echo "❌ Failed to generate main README.md"; exit 1; }
 	@# Generate component documentation
 	@echo "📝 Generating component documentation..."
 	@for component in cluster network nodes policies; do \
