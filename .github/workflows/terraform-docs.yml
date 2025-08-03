@@ -109,5 +109,12 @@ jobs:
           echo "📝 Committing changes..."
           git commit -m "${{ env.COMMIT_MSG }}"
 
-          echo "📝 Pushing changes..."
-          git push origin HEAD:${{ github.head_ref || github.ref_name }}
+          echo "📝 Determining target branch..."
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            TARGET_BRANCH="${{ github.head_ref }}"
+          else
+            TARGET_BRANCH="${{ github.ref_name }}"
+          fi
+
+          echo "📝 Pushing to branch: $TARGET_BRANCH"
+          git push origin HEAD:$TARGET_BRANCH
