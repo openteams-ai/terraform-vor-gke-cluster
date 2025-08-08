@@ -48,6 +48,12 @@ output "subnet_id" {
   value       = var.create_vpc ? google_compute_subnetwork.main[0].id : null
 }
 
+output "cluster_access_token" {
+  description = "Access token for the GKE cluster"
+  sensitive   = true
+  value       = data.google_client_config.main.access_token
+}
+
 output "cluster_security_features" {
   description = "Security features enabled on the cluster"
   value = {

@@ -55,6 +55,13 @@ resource "google_container_cluster" "main" {
     }
   }
 
+  # https://cloud.google.com/kubernetes-engine/docs/how-to/disable-kubelet-readonly-port
+  node_pool_auto_config {
+    node_kubelet_config {
+      insecure_kubelet_readonly_port_enabled = "FALSE"
+    }
+  }
+
   # checkov:skip=CKV_GCP_65: Support for RBAC authenticator groups
   # https://cloud.google.com/kubernetes-engine/docs/how-to/google-groups-rbac
   dynamic "authenticator_groups_config" {
@@ -98,6 +105,10 @@ resource "google_container_cluster" "main" {
 
   release_channel {
     channel = var.release_channel
+  }
+
+  gateway_api_config {
+    channel = var.gateway_api_channel
   }
 
   workload_identity_config {
@@ -178,4 +189,11 @@ resource "google_container_cluster" "main" {
     google_project_service.container,
     google_project_service.compute
   ]
+}
+
+check "authorized_networks_configured" {
+  assert {
+    condition     = length(var.authorized_networks) > 0
+    error_message = "WARNING: No authorized networks configured. Cluster master will be inaccessible. Add CIDR blocks to be whitelisted to authorized_networks."
+  }
 }
