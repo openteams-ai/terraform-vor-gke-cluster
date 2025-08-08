@@ -48,7 +48,14 @@ resource "google_container_node_pool" "main" {
     }
 
     # Node taints
-    taint = local.merged_node_groups[count.index].node_taints
+    taint {
+      for_each = local.merged_node_groups[count.index].node_taints
+      content {
+        key    = taint.value.key
+        value  = taint.value.value
+        effect = taint.value.effect
+      }
+    }
 
     # Security metadata
     metadata = {
